@@ -2,8 +2,4 @@ venv/
 .venv/
 __pycache__/
 *.pyc
-
-output/*.xlsx
-output/*.csv
-output/*.html
-output/*.pdf
+output/
