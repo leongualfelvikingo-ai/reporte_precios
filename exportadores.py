@@ -22,14 +22,20 @@ def exportar_excel(reporte, ruta):
     ws["A1"] = "Criptomoneda"
     ws["B1"] = "Precio USD"
     ws["C1"] = "Fecha consulta"
+    ws["D1"] = "Variación %"
 
     for i, item in enumerate(reporte, start=2):
 
         ws[f"A{i}"] = item["nombre"]
         ws[f"B{i}"] = item["precio"]
         ws[f"C{i}"] = item["fecha"]
+        ws[f"D{i}"] = (
+            item["variacion"]
+            if item["variacion"] is not None
+            else "N/A"
+        )
 
-    for cell in ["A1", "B1", "C1"]:
+    for cell in ["A1", "B1", "C1", "D1"]:
 
         ws[cell].font = Font(
             bold=True,
@@ -44,6 +50,7 @@ def exportar_excel(reporte, ruta):
     ws.column_dimensions["A"].width = 20
     ws.column_dimensions["B"].width = 15
     ws.column_dimensions["C"].width = 25
+    ws.column_dimensions["D"].width = 15
 
     wb.save(ruta)
 

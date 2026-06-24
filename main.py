@@ -56,12 +56,14 @@ guardar_precios(reporte)
 print("\nREPORTE DE CRIPTOMONEDAS\n")
 
 for item in reporte:
+    variacion = item["variacion"]
+    if variacion is not None:
+        signo = "+" if variacion > 0 else ""
+        var_str = f" ({signo}{variacion}%)"
+    else:
+        var_str = " (sin historial)"
 
-    print(
-        f"{item['nombre']}: "
-        f"USD {item['precio']} "
-        f"({item['fecha']})"
-    )
+    print(f"{item['nombre']}: USD {item['precio']}{var_str} ({item['fecha']})")
 
 # Exportar
 exportar_excel(

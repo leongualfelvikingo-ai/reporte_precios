@@ -21,23 +21,22 @@ def obtener_precios(criptos):
 
 
 def construir_reporte(criptos, data, ahora):
-
+    from database import obtener_precio_anterior
     reporte = []
-
     for cripto in criptos:
-
-        precio = data.get(
-            cripto,
-            {}
-        ).get(
-            "usd",
-            "No disponible"
-        )
-
+        precio = data.get(cripto, {}).get("usd", "No disponible")
+        anterior = obtener_precio_anterior(cripto.capitalize())
+        variacion = calcular_variacion(precio, anterior)
         reporte.append({
             "nombre": cripto.capitalize(),
             "precio": precio,
-            "fecha": ahora
+            "fecha": ahora,
+            "variacion": variacion
         })
-
     return reporte
+
+def calcular_variacion(precio_actual, precio_anterior):
+    if precio_anterior is None:
+        return None
+    variacion = ((precio_actual - precio_anterior) / precio_anterior) * 100
+    return round(variacion, 2)

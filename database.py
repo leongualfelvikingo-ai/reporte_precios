@@ -36,3 +36,16 @@ def obtener_historial():
     filas = cursor.fetchall()
     conn.close()
     return filas
+
+def obtener_precio_anterior(nombre):
+    conn = sqlite3.connect("output/historial.db")
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT precio FROM precios
+        WHERE nombre = ?
+        ORDER BY rowid DESC
+        LIMIT 1 OFFSET 1
+    """, (nombre,))
+    fila = cursor.fetchone()
+    conn.close()
+    return fila[0] if fila else None
