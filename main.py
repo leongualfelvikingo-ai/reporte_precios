@@ -5,6 +5,7 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 from config import CRIPTOS, ARCHIVO_SALIDA
 import csv
+from openpyxl.styles import Font, PatternFill
 
 from reportlab.platypus import (
     SimpleDocTemplate,
@@ -75,6 +76,14 @@ for i, item in enumerate(reporte, start=2):
     ws[f"A{i}"] = item["nombre"]
     ws[f"B{i}"] = item["precio"]
     ws[f"C{i}"] = item["fecha"]
+
+for cell in ["A1", "B1", "C1"]:
+    ws[cell].font = Font(bold=True, color="FFFFFF")
+    ws[cell].fill = PatternFill(fill_type="solid", fgColor="4F81BD")
+
+ws.column_dimensions["A"].width = 20
+ws.column_dimensions["B"].width = 15
+ws.column_dimensions["C"].width = 25
 
 wb.save(ARCHIVO_SALIDA)
 
