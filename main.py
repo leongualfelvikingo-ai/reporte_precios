@@ -1,5 +1,5 @@
 import os
-
+from database import inicializar_db, guardar_precios
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -47,6 +47,10 @@ reporte = construir_reporte(
     data,
     ahora
 )
+
+# Guardar en base de datos
+inicializar_db()
+guardar_precios(reporte)
 
 # Mostrar en consola
 print("\nREPORTE DE CRIPTOMONEDAS\n")
