@@ -145,47 +145,23 @@ def exportar_html(reporte, ruta):
 def exportar_pdf(reporte, ruta):
 
     pdf = SimpleDocTemplate(ruta)
-
     styles = getSampleStyleSheet()
-
     contenido = []
 
     contenido.append(
-        Paragraph(
-            "Reporte de Criptomonedas",
-            styles["Title"]
-        )
+        Paragraph("Reporte de Criptomonedas", styles["Title"])
     )
-
-    contenido.append(
-        Spacer(1, 20)
-    )
+    contenido.append(Spacer(1, 20))
 
     for item in reporte:
 
-        contenido.append(
-            Paragraph(
-                f"<b>{item['nombre']}</b>",
-                styles["Heading2"]
-            )
-        )
+        variacion = item.get("variacion")
+        var_str = f"{'+' if variacion > 0 else ''}{variacion}%" if variacion is not None else "N/A"
 
-        contenido.append(
-            Paragraph(
-                f"Precio: USD {item['precio']}",
-                styles["Normal"]
-            )
-        )
-
-        contenido.append(
-            Paragraph(
-                f"Fecha: {item['fecha']}",
-                styles["Normal"]
-            )
-        )
-
-        contenido.append(
-            Spacer(1, 12)
-        )
+        contenido.append(Paragraph(f"<b>{item['nombre']}</b>", styles["Heading2"]))
+        contenido.append(Paragraph(f"Precio: USD {item['precio']}", styles["Normal"]))
+        contenido.append(Paragraph(f"Fecha: {item['fecha']}", styles["Normal"]))
+        contenido.append(Paragraph(f"Variación: {var_str}", styles["Normal"]))
+        contenido.append(Spacer(1, 12))
 
     pdf.build(contenido)
