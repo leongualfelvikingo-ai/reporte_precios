@@ -25,6 +25,7 @@ from exportadores import (
     exportar_pdf
 )
 
+from graficos import generar_grafico
 
 # Crear carpeta si no existe
 os.makedirs(
@@ -112,6 +113,11 @@ exportar_pdf(
     "output/reporte.pdf"
 )
 
+# Generar gráfico
+generar_grafico(
+    reporte,
+    "output/grafico_precios.png"
+)
 
 # Resumen final
 print("\nArchivos generados correctamente:\n")
@@ -120,3 +126,4 @@ print(f"- Excel : {ARCHIVO_SALIDA}")
 print("- CSV   : output/reporte.csv")
 print("- HTML  : output/reporte.html")
 print("- PDF   : output/reporte.pdf")
+print("- Gráfico : output/grafico_precios.png")
