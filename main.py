@@ -2,7 +2,8 @@ import os
 
 from database import (
     inicializar_db,
-    guardar_precios
+    guardar_precios,
+    obtener_historial
 )
 
 from datetime import datetime
@@ -25,7 +26,11 @@ from exportadores import (
     exportar_pdf
 )
 
-from graficos import generar_grafico
+from graficos import (
+    generar_grafico,
+    generar_grafico_historico
+)
+
 
 # Crear carpeta si no existe
 os.makedirs(
@@ -113,11 +118,24 @@ exportar_pdf(
     "output/reporte.pdf"
 )
 
-# Generar gráfico
+
+# Generar gráfico de precios actuales
 generar_grafico(
     reporte,
     "output/grafico_precios.png"
 )
+
+
+# Obtener historial actualizado
+historial = obtener_historial()
+
+
+# Generar gráfico histórico
+generar_grafico_historico(
+    historial,
+    "output/grafico_historico.png"
+)
+
 
 # Resumen final
 print("\nArchivos generados correctamente:\n")
@@ -127,3 +145,4 @@ print("- CSV   : output/reporte.csv")
 print("- HTML  : output/reporte.html")
 print("- PDF   : output/reporte.pdf")
 print("- Gráfico : output/grafico_precios.png")
+print("- Gráfico histórico : output/grafico_historico.png")

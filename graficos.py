@@ -14,3 +14,35 @@ def generar_grafico(reporte, ruta):
     plt.tight_layout()
     plt.savefig(ruta)
     plt.close()
+
+def generar_grafico_historico(historial, ruta):
+    from collections import defaultdict
+
+    datos = defaultdict(list)
+
+    for nombre, precio, fecha in historial:
+        datos[nombre].append((fecha, precio))
+
+    plt.figure(figsize=(12, 6))
+
+    for nombre, registros in datos.items():
+        registros.sort()
+
+        fechas = [r[0] for r in registros]
+        precios = [r[1] for r in registros]
+
+        plt.plot(
+            fechas,
+            precios,
+            marker="o",
+            label=nombre
+        )
+
+    plt.title("Evolución histórica de precios")
+    plt.xlabel("Fecha")
+    plt.ylabel("Precio en USD")
+    plt.legend()
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig(ruta)
+    plt.close()
