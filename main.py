@@ -1,5 +1,10 @@
 import os
-from database import inicializar_db, guardar_precios
+
+from database import (
+    inicializar_db,
+    guardar_precios
+)
+
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
@@ -20,17 +25,24 @@ from exportadores import (
     exportar_pdf
 )
 
+
 # Crear carpeta si no existe
 os.makedirs(
     "output",
     exist_ok=True
 )
 
+
+# Inicializar base de datos
+inicializar_db()
+
+
 # Obtener datos
 data = obtener_precios(CRIPTOS)
 
 if not data:
     exit()
+
 
 # Fecha actual
 ahora = datetime.now(
@@ -41,6 +53,7 @@ ahora = datetime.now(
     "%Y-%m-%d %H:%M"
 )
 
+
 # Construir reporte
 reporte = construir_reporte(
     CRIPTOS,
@@ -48,22 +61,35 @@ reporte = construir_reporte(
     ahora
 )
 
-# Guardar en base de datos
-inicializar_db()
+
+# Guardar precios en base de datos
 guardar_precios(reporte)
+
 
 # Mostrar en consola
 print("\nREPORTE DE CRIPTOMONEDAS\n")
 
 for item in reporte:
+
     variacion = item["variacion"]
+
     if variacion is not None:
+
         signo = "+" if variacion > 0 else ""
+
         var_str = f" ({signo}{variacion}%)"
+
     else:
+
         var_str = " (sin historial)"
 
-    print(f"{item['nombre']}: USD {item['precio']}{var_str} ({item['fecha']})")
+    print(
+        f"{item['nombre']}: "
+        f"USD {item['precio']}"
+        f"{var_str} "
+        f"({item['fecha']})"
+    )
+
 
 # Exportar
 exportar_excel(
@@ -85,6 +111,7 @@ exportar_pdf(
     reporte,
     "output/reporte.pdf"
 )
+
 
 # Resumen final
 print("\nArchivos generados correctamente:\n")

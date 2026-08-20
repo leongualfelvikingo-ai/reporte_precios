@@ -69,15 +69,23 @@ def exportar_csv(reporte, ruta):
         writer.writerow([
             "Criptomoneda",
             "Precio USD",
-            "Fecha"
+            "Fecha",
+            "Variación %"
         ])
 
         for item in reporte:
 
+            variacion = (
+                item["variacion"]
+                if item["variacion"] is not None
+                else "N/A"
+            )
+
             writer.writerow([
                 item["nombre"],
                 item["precio"],
-                item["fecha"]
+                item["fecha"],
+                variacion
             ])
 
 
@@ -98,16 +106,24 @@ def exportar_html(reporte, ruta):
 <th>Criptomoneda</th>
 <th>Precio USD</th>
 <th>Fecha</th>
+<th>Variación %</th>
 </tr>
 """
 
     for item in reporte:
+
+        variacion = (
+            item["variacion"]
+            if item["variacion"] is not None
+            else "N/A"
+        )
 
         html += f"""
 <tr>
 <td>{item['nombre']}</td>
 <td>{item['precio']}</td>
 <td>{item['fecha']}</td>
+<td>{variacion}</td>
 </tr>
 """
 
@@ -125,7 +141,6 @@ def exportar_html(reporte, ruta):
     ) as archivo:
 
         archivo.write(html)
-
 
 def exportar_pdf(reporte, ruta):
 
