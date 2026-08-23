@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Reporte Cripto</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 40px; }
+        h1 { color: #333; }
+        table { border-collapse: collapse; width: 100%; }
+        th { background-color: #4F81BD; color: white; padding: 10px; }
+        td { padding: 10px; border: 1px solid #ddd; }
+        tr:nth-child(even) { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Reporte de Criptomonedas</h1>
+    <p>Actualizado: {{ fecha }}</p>
+    <table>
+        <tr>
+            <th>Criptomoneda</th>
+            <th>Precio USD</th>
+            <th>Variación %</th>
+        </tr>
+        {% for item in reporte %}
+        <tr>
+            <td>{{ item.nombre }}</td>
+            <td>{{ item.precio }}</td>
+            <td>{{ item.variacion if item.variacion is not none else "N/A" }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>
