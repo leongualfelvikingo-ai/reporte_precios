@@ -1,3 +1,4 @@
+import os
 import csv
 
 from openpyxl import Workbook
@@ -13,8 +14,8 @@ from reportlab.lib.styles import (
     getSampleStyleSheet
 )
 
-
 def exportar_excel(reporte, ruta):
+    from openpyxl.drawing.image import Image as XLImage
 
     wb = Workbook()
     ws = wb.active
@@ -25,7 +26,6 @@ def exportar_excel(reporte, ruta):
     ws["D1"] = "Variación %"
 
     for i, item in enumerate(reporte, start=2):
-
         ws[f"A{i}"] = item["nombre"]
         ws[f"B{i}"] = item["precio"]
         ws[f"C{i}"] = item["fecha"]
@@ -36,21 +36,22 @@ def exportar_excel(reporte, ruta):
         )
 
     for cell in ["A1", "B1", "C1", "D1"]:
-
-        ws[cell].font = Font(
-            bold=True,
-            color="FFFFFF"
-        )
-
-        ws[cell].fill = PatternFill(
-            fill_type="solid",
-            fgColor="4F81BD"
-        )
+        ws[cell].font = Font(bold=True, color="FFFFFF")
+        ws[cell].fill = PatternFill(fill_type="solid", fgColor="4F81BD")
 
     ws.column_dimensions["A"].width = 20
     ws.column_dimensions["B"].width = 15
     ws.column_dimensions["C"].width = 25
     ws.column_dimensions["D"].width = 15
+
+    for ruta_img, hoja_nombre in [
+        ("output/grafico_precios.png", "Gráfico Actual"),
+        ("output/grafico_historico.png", "Gráfico Histórico")
+    ]:
+        if os.path.exists(ruta_img):
+            ws_grafico = wb.create_sheet(hoja_nombre)
+            img = XLImage(ruta_img)
+            ws_grafico.add_image(img, "A1")
 
     wb.save(ruta)
 
@@ -143,18 +144,16 @@ def exportar_html(reporte, ruta):
         archivo.write(html)
 
 def exportar_pdf(reporte, ruta):
+    from reportlab.platypus import Image
 
     pdf = SimpleDocTemplate(ruta)
     styles = getSampleStyleSheet()
     contenido = []
 
-    contenido.append(
-        Paragraph("Reporte de Criptomonedas", styles["Title"])
-    )
+    contenido.append(Paragraph("Reporte de Criptomonedas", styles["Title"]))
     contenido.append(Spacer(1, 20))
 
     for item in reporte:
-
         variacion = item.get("variacion")
         var_str = f"{'+' if variacion > 0 else ''}{variacion}%" if variacion is not None else "N/A"
 
@@ -163,5 +162,15 @@ def exportar_pdf(reporte, ruta):
         contenido.append(Paragraph(f"Fecha: {item['fecha']}", styles["Normal"]))
         contenido.append(Paragraph(f"Variación: {var_str}", styles["Normal"]))
         contenido.append(Spacer(1, 12))
+
+    # Gráficos
+    for ruta_img, titulo in [
+        ("output/grafico_precios.png", "Precios actuales"),
+        ("output/grafico_historico.png", "Historial de precios")
+    ]:
+        if os.path.exists(ruta_img):
+            contenido.append(Paragraph(titulo, styles["Heading2"]))
+            contenido.append(Image(ruta_img, width=450, height=250))
+            contenido.append(Spacer(1, 20))
 
     pdf.build(contenido)
