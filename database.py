@@ -1,95 +1,102 @@
 import sqlite3
 
+from config import ARCHIVO_BASE_DATOS, OUTPUT_DIR
+
 
 def inicializar_db():
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
-    conn = sqlite3.connect("output/historial.db")
+    conexion = sqlite3.connect(ARCHIVO_BASE_DATOS)
 
-    cursor = conn.cursor()
+    try:
+        cursor = conexion.cursor()
 
-    cursor.execute("""
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS historial (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                cripto TEXT NOT NULL,
+                precio REAL NOT NULL,
+                fecha TEXT NOT NULL
+            )
+        """)
 
-        CREATE TABLE IF NOT EXISTS precios (
+        conexion.commit()
+    finally:
+        conexion.close()
 
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
 
-            nombre TEXT,
+def inicializar_base_datos():
+    inicializar_db()
 
-            precio REAL,
 
-            fecha TEXT
+def obtener_precio_anterior(cripto):
+    conexion = sqlite3.connect(ARCHIVO_BASE_DATOS)
 
+    try:
+        cursor = conexion.cursor()
+
+        cursor.execute(
+            """
+            SELECT precio
+            FROM historial
+            WHERE LOWER(cripto) = LOWER(?)
+            ORDER BY id DESC
+            LIMIT 1
+            """,
+            (cripto,),
         )
 
-    """)
+        resultado = cursor.fetchone()
 
-    conn.commit()
+        if resultado is None:
+            return None
 
-    conn.close()
+        return resultado[0]
+    finally:
+        conexion.close()
 
 
 def guardar_precios(reporte):
+    conexion = sqlite3.connect(ARCHIVO_BASE_DATOS)
 
-    conn = sqlite3.connect("output/historial.db")
+    try:
+        cursor = conexion.cursor()
 
-    cursor = conn.cursor()
+        for item in reporte:
+            precio = item.get("precio")
 
-    for item in reporte:
+            if isinstance(precio, (int, float)):
+                cursor.execute(
+                    """
+                    INSERT INTO historial (cripto, precio, fecha)
+                    VALUES (?, ?, ?)
+                    """,
+                    (
+                        item["nombre"],
+                        precio,
+                        item["fecha"],
+                    ),
+                )
 
-        cursor.execute("""
-
-            INSERT INTO precios (nombre, precio, fecha)
-
-            VALUES (?, ?, ?)
-
-        """, (item["nombre"], item["precio"], item["fecha"]))
-
-    conn.commit()
-
-    conn.close()
+        conexion.commit()
+    finally:
+        conexion.close()
 
 
 def obtener_historial():
+    conexion = sqlite3.connect(ARCHIVO_BASE_DATOS)
 
-    conn = sqlite3.connect("output/historial.db")
+    try:
+        cursor = conexion.cursor()
 
-    cursor = conn.cursor()
+        cursor.execute(
+            """
+            SELECT cripto, precio, fecha
+            FROM historial
+            ORDER BY id ASC
+            """
+        )
 
-    cursor.execute("""
-
-        SELECT nombre, precio, fecha
-
-        FROM precios
-
-        ORDER BY fecha DESC
-
-    """)
-
-    filas = cursor.fetchall()
-
-    conn.close()
-
-    return filas
-
-
-def obtener_precio_anterior(nombre):
-
-    conn = sqlite3.connect("output/historial.db")
-
-    cursor = conn.cursor()
-
-    cursor.execute("""
-
-        SELECT precio
-        FROM precios
-        WHERE nombre = ?
-        ORDER BY rowid DESC
-        LIMIT 1
-
-    """, (nombre,))
-
-    fila = cursor.fetchone()
-
-    conn.close()
-
-    return fila[0] if fila else None
+        return cursor.fetchall()
+    finally:
+        conexion.close()

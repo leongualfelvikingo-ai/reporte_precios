@@ -45,3 +45,29 @@ def calcular_variacion(precio_actual, precio_anterior):
         return None
 
     return ((precio_actual - precio_anterior) / precio_anterior) * 100
+
+
+def construir_reporte(criptos, precios, fecha, obtener_anterior=None):
+    reporte = []
+
+    for cripto in criptos:
+        precio = precios.get(cripto)
+
+        precio_anterior = None
+
+        if obtener_anterior is not None:
+            precio_anterior = obtener_anterior(cripto)
+
+        variacion = calcular_variacion(
+            precio,
+            precio_anterior
+        )
+
+        reporte.append({
+            "nombre": cripto.capitalize(),
+            "precio": precio,
+            "fecha": fecha,
+            "variacion": variacion,
+        })
+
+    return reporte
