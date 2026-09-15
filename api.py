@@ -1,42 +1,47 @@
 import requests
 
+API_URL = "https://api.coingecko.com/api/v3/simple/price"
+API_TIMEOUT_SECONDS = 15
+
 
 def obtener_precios(criptos):
-    ids = ",".join(criptos)
+    params = {
+        "ids": ",".join(criptos),
+        "vs_currencies": "usd",
+    }
 
-    url = (
-        "https://api.coingecko.com/api/v3/simple/price"
-        f"?ids={ids}&vs_currencies=usd"
+    response = requests.get(
+        API_URL,
+        params=params,
+        timeout=API_TIMEOUT_SECONDS,
+        headers={"User-Agent": "reporte-precios/4.0"},
     )
 
-    try:
-        response = requests.get(url)
-        response.raise_for_status()
+    response.raise_for_status()
 
-        return response.json()
+    data = response.json()
 
-    except Exception as e:
-        print(f"Error al obtener datos: {e}")
-        return None
+    if not isinstance(data, dict):
+        raise ValueError("La API devolvió un formato de datos inválido.")
 
+    precios = {}
 
-def construir_reporte(criptos, data, ahora):
-    from database import obtener_precio_anterior
-    reporte = []
     for cripto in criptos:
-        precio = data.get(cripto, {}).get("usd", "No disponible")
-        anterior = obtener_precio_anterior(cripto.capitalize())
-        variacion = calcular_variacion(precio, anterior)
-        reporte.append({
-            "nombre": cripto.capitalize(),
-            "precio": precio,
-            "fecha": ahora,
-            "variacion": variacion
-        })
-    return reporte
+        precio = data.get(cripto, {}).get("usd")
+
+        if not isinstance(precio, (int, float)):
+            precio = "No disponible"
+
+        precios[cripto] = precio
+
+    return precios
+
 
 def calcular_variacion(precio_actual, precio_anterior):
-    if precio_anterior is None:
+    if not isinstance(precio_actual, (int, float)):
         return None
-    variacion = ((precio_actual - precio_anterior) / precio_anterior) * 100
-    return round(variacion, 2)
+
+    if not isinstance(precio_anterior, (int, float)) or precio_anterior == 0:
+        return None
+
+    return ((precio_actual - precio_anterior) / precio_anterior) * 100
