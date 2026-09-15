@@ -44,8 +44,7 @@ def calcular_variacion(precio_actual, precio_anterior):
     if not isinstance(precio_anterior, (int, float)) or precio_anterior == 0:
         return None
 
-    return ((precio_actual - precio_anterior) / precio_anterior) * 100
-
+    return round(((precio_actual - precio_anterior) / precio_anterior) * 100, 2)
 
 def construir_reporte(criptos, precios, fecha, obtener_anterior=None):
     reporte = []
