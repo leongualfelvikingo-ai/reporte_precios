@@ -3,7 +3,8 @@ import os
 from database import (
     inicializar_db,
     guardar_precios,
-    obtener_historial
+    obtener_historial,
+    obtener_precio_anterior
 )
 
 from datetime import datetime
@@ -64,7 +65,8 @@ ahora = datetime.now(
 reporte = construir_reporte(
     CRIPTOS,
     data,
-    ahora
+    ahora,
+    obtener_precio_anterior
 )
 
 
