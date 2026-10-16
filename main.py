@@ -4,7 +4,7 @@ from database import (
     inicializar_db,
     guardar_precios,
     obtener_historial,
-    obtener_precio_anterior
+    obtener_precio_anterior,
 )
 
 from datetime import datetime
@@ -12,32 +12,35 @@ from zoneinfo import ZoneInfo
 
 from config import (
     CRIPTOS,
-    ARCHIVO_SALIDA
+    OUTPUT_DIR,
+    ARCHIVO_SALIDA,
+    ARCHIVO_CSV,
+    ARCHIVO_HTML,
+    ARCHIVO_PDF,
+    ARCHIVO_GRAFICO_ACTUAL,
+    ARCHIVO_GRAFICO_HISTORICO,
 )
 
 from api import (
     obtener_precios,
-    construir_reporte
+    construir_reporte,
 )
 
 from exportadores import (
     exportar_excel,
     exportar_csv,
     exportar_html,
-    exportar_pdf
+    exportar_pdf,
 )
 
 from graficos import (
     generar_grafico,
-    generar_grafico_historico
+    generar_grafico_historico,
 )
 
 
-# Crear carpeta si no existe
-os.makedirs(
-    "output",
-    exist_ok=True
-)
+# Crear la carpeta de salida en la ubicación definida en config.py
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 
 # Inicializar base de datos
@@ -48,17 +51,13 @@ inicializar_db()
 data = obtener_precios(CRIPTOS)
 
 if not data:
-    exit()
+    raise SystemExit("No se pudieron obtener datos de la API.")
 
 
 # Fecha actual
 ahora = datetime.now(
-    ZoneInfo(
-        "America/Argentina/Buenos_Aires"
-    )
-).strftime(
-    "%Y-%m-%d %H:%M"
-)
+    ZoneInfo("America/Argentina/Buenos_Aires")
+).strftime("%Y-%m-%d %H:%M")
 
 
 # Construir reporte
@@ -66,7 +65,7 @@ reporte = construir_reporte(
     CRIPTOS,
     data,
     ahora,
-    obtener_precio_anterior
+    obtener_precio_anterior,
 )
 
 
@@ -78,17 +77,12 @@ guardar_precios(reporte)
 print("\nREPORTE DE CRIPTOMONEDAS\n")
 
 for item in reporte:
-
     variacion = item["variacion"]
 
     if variacion is not None:
-
         signo = "+" if variacion > 0 else ""
-
         var_str = f" ({signo}{variacion}%)"
-
     else:
-
         var_str = " (sin historial)"
 
     print(
@@ -99,33 +93,15 @@ for item in reporte:
     )
 
 
-# Exportar
-exportar_excel(
-    reporte,
-    ARCHIVO_SALIDA
-)
-
-exportar_csv(
-    reporte,
-    "output/reporte.csv"
-)
-
-exportar_html(
-    reporte,
-    "output/reporte.html"
-)
-
-exportar_pdf(
-    reporte,
-    "output/reporte.pdf"
-)
+# Exportar los archivos usando las rutas centralizadas en config.py
+exportar_excel(reporte, ARCHIVO_SALIDA)
+exportar_csv(reporte, ARCHIVO_CSV)
+exportar_html(reporte, ARCHIVO_HTML)
+exportar_pdf(reporte, ARCHIVO_PDF)
 
 
 # Generar gráfico de precios actuales
-generar_grafico(
-    reporte,
-    "output/grafico_precios.png"
-)
+generar_grafico(reporte, ARCHIVO_GRAFICO_ACTUAL)
 
 
 # Obtener historial actualizado
@@ -133,18 +109,14 @@ historial = obtener_historial()
 
 
 # Generar gráfico histórico
-generar_grafico_historico(
-    historial,
-    "output/grafico_historico.png"
-)
+generar_grafico_historico(historial, ARCHIVO_GRAFICO_HISTORICO)
 
 
 # Resumen final
 print("\nArchivos generados correctamente:\n")
-
-print(f"- Excel : {ARCHIVO_SALIDA}")
-print("- CSV   : output/reporte.csv")
-print("- HTML  : output/reporte.html")
-print("- PDF   : output/reporte.pdf")
-print("- Gráfico : output/grafico_precios.png")
-print("- Gráfico histórico : output/grafico_historico.png")
+print(f"- Excel: {ARCHIVO_SALIDA}")
+print(f"- CSV: {ARCHIVO_CSV}")
+print(f"- HTML: {ARCHIVO_HTML}")
+print(f"- PDF: {ARCHIVO_PDF}")
+print(f"- Gráfico actual: {ARCHIVO_GRAFICO_ACTUAL}")
+print(f"- Gráfico histórico: {ARCHIVO_GRAFICO_HISTORICO}")
