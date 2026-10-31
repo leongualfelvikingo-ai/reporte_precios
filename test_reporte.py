@@ -1,3 +1,4 @@
+import importlib
 import importlib.util
 import os
 import shutil
@@ -5,6 +6,7 @@ import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from unittest.mock import patch
 
 
 class ReporteTests(unittest.TestCase):
@@ -12,7 +14,6 @@ class ReporteTests(unittest.TestCase):
     def setUpClass(cls):
         cls.tmp = tempfile.mkdtemp()
         cls.output = Path(cls.tmp) / "output"
-        os.environ["DEMO_PAYMENTS_ENABLED"] = "1"
         import config
         config.OUTPUT_DIR = cls.output
         config.REPORTS_DIR = cls.output / "reportes"
@@ -54,9 +55,13 @@ class ReporteTests(unittest.TestCase):
 
     @unittest.skipUnless(importlib.util.find_spec("flask"), "Flask no está instalado; instalar requirements.txt para ejecutar la prueba web")
     def test_flask_no_genera_en_get_y_demo_cerrado_por_defecto(self):
-        from app import app
-        client = app.test_client()
-        self.assertEqual(client.get("/").status_code, 200)
+        with patch.dict(os.environ, {"DEMO_PAYMENTS_ENABLED": "0"}):
+            import app as app_module
+            app_module = importlib.reload(app_module)
+        client = app_module.app.test_client()
+        with patch.object(app_module, "generar_reporte") as generate:
+            self.assertEqual(client.get("/").status_code, 200)
+            generate.assert_not_called()
         self.assertEqual(client.post("/generar").status_code, 402)
 
 
