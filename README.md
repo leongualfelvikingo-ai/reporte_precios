@@ -38,6 +38,10 @@ La v4 mantiene la lista fija de tres activos configurados en `config.py`. No inc
 
 La selección de formatos en v4 controla qué archivos se generan y quedan disponibles para descargar. No representa una compra ni un cobro.
 
+## Versión 5
+
+El código fuente de la versión avanzada se conserva por separado en [`versiones/v5/`](versiones/v5/README.md). No reemplaza los archivos de v4 ni se mezcla con su ejecución.
+
 ## Limitaciones
 
 - La aplicación usa almacenamiento local en la carpeta `output/`; no es un servicio multiusuario desplegado.
