@@ -13,11 +13,16 @@ La ruta principal muestra la interfaz. La generación ocurre mediante `POST /gen
 ```bash
 python -m venv .venv
 pip install -r requirements.txt
+# Habilitar solo para probar el flujo simulado localmente:
+# Windows PowerShell: $env:DEMO_PAYMENTS_ENABLED="1"
+# macOS / Linux: export DEMO_PAYMENTS_ENABLED=1
 python app.py
 ```
 
 Abrí `http://127.0.0.1:5000/`.
 
+El modo demo está desactivado por defecto. No mueve dinero real. No lo habilites en un despliegue público.
+
 ## Límites
 
-No hay integración de producción con Mercado Pago, cuentas reales, webhooks firmados, reembolsos, hosting permanente ni almacenamiento externo privado. El modo demo no cobra dinero y no debe exponerse como producción. La variable `DEMO_PAYMENTS_ENABLED` debe revisarse antes de ejecutar la aplicación.
+No hay integración de producción con Mercado Pago, cuentas reales, webhooks firmados, reembolsos, hosting permanente ni almacenamiento externo privado. El flujo de pago actual es solo demostrativo y requiere una revisión de seguridad antes de cualquier despliegue.
