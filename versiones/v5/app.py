@@ -11,7 +11,8 @@ from main import generar_reporte
 app = Flask(__name__)
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("reporte_precios")
-DEMO_PAYMENTS_ENABLED = os.getenv("DEMO_PAYMENTS_ENABLED", "1") == "1"
+# Fail closed: the simulated payment flow must be explicitly enabled for local testing.
+DEMO_PAYMENTS_ENABLED = os.getenv("DEMO_PAYMENTS_ENABLED", "0") == "1"
 
 
 def _error_id():
