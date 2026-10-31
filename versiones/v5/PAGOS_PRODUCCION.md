@@ -2,7 +2,7 @@
 
 La v5 incluye un circuito de demostración: genera una operación aislada, crea tokens de descarga, bloquea cada formato hasta marcarlo como pagado y permite descargar solo el formato autorizado.
 
-El modo demo se controla con `DEMO_PAYMENTS_ENABLED=1` y no mueve dinero real. Antes de producción hay que reemplazar la ruta de pago demo por un proveedor real y confirmar el pago en el servidor mediante webhook. El navegador nunca debe ser la fuente de verdad.
+El modo demo se controla con `DEMO_PAYMENTS_ENABLED=1`, está desactivado por defecto y no mueve dinero real. Solo debe habilitarse explícitamente en pruebas locales. Antes de producción hay que reemplazar la ruta de pago demo por un proveedor real y confirmar el pago en el servidor mediante webhook. El navegador nunca debe ser la fuente de verdad.
 
 ## Contrato recomendado
 
