@@ -1,176 +1,71 @@
-import os
 import csv
-
+import html
+from pathlib import Path
 from openpyxl import Workbook
+from openpyxl.drawing.image import Image as XLImage
 from openpyxl.styles import Font, PatternFill
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import Image, Paragraph, SimpleDocTemplate, Spacer
+from config import ARCHIVO_GRAFICO_ACTUAL, ARCHIVO_GRAFICO_HISTORICO
 
-from reportlab.platypus import (
-    SimpleDocTemplate,
-    Paragraph,
-    Spacer
-)
 
-from reportlab.lib.styles import (
-    getSampleStyleSheet
-)
+def _variacion(item):
+    return item.get("variacion") if item.get("variacion") is not None else "N/A"
 
-def exportar_excel(reporte, ruta):
-    from openpyxl.drawing.image import Image as XLImage
 
+def exportar_excel(reporte, ruta, grafico_actual=ARCHIVO_GRAFICO_ACTUAL, grafico_historico=ARCHIVO_GRAFICO_HISTORICO):
     wb = Workbook()
     ws = wb.active
-
-    ws["A1"] = "Criptomoneda"
-    ws["B1"] = "Precio USD"
-    ws["C1"] = "Fecha consulta"
-    ws["D1"] = "Variación %"
-
-    for i, item in enumerate(reporte, start=2):
-        ws[f"A{i}"] = item["nombre"]
-        ws[f"B{i}"] = item["precio"]
-        ws[f"C{i}"] = item["fecha"]
-        ws[f"D{i}"] = (
-            item["variacion"]
-            if item["variacion"] is not None
-            else "N/A"
-        )
-
-    for cell in ["A1", "B1", "C1", "D1"]:
-        ws[cell].font = Font(bold=True, color="FFFFFF")
-        ws[cell].fill = PatternFill(fill_type="solid", fgColor="4F81BD")
-
-    ws.column_dimensions["A"].width = 20
-    ws.column_dimensions["B"].width = 15
-    ws.column_dimensions["C"].width = 25
-    ws.column_dimensions["D"].width = 15
-
-    for ruta_img, hoja_nombre in [
-        ("output/grafico_precios.png", "Gráfico Actual"),
-        ("output/grafico_historico.png", "Gráfico Histórico")
-    ]:
-        if os.path.exists(ruta_img):
-            ws_grafico = wb.create_sheet(hoja_nombre)
-            img = XLImage(ruta_img)
-            ws_grafico.add_image(img, "A1")
-
+    ws.title = "Reporte"
+    ws.append(["Criptomoneda", "Precio USD", "Fecha consulta", "Variación %"])
+    for item in reporte:
+        ws.append([item["nombre"], item["precio"], item["fecha"], _variacion(item)])
+    for cell in ws[1]:
+        cell.font = Font(bold=True, color="FFFFFF")
+        cell.fill = PatternFill(fill_type="solid", fgColor="4F81BD")
+    for column, width in {"A": 20, "B": 16, "C": 22, "D": 15}.items():
+        ws.column_dimensions[column].width = width
+    for image_path, sheet_name in ((grafico_actual, "Gráfico Actual"), (grafico_historico, "Gráfico Histórico")):
+        if Path(image_path).is_file():
+            chart_sheet = wb.create_sheet(sheet_name)
+            chart_sheet.add_image(XLImage(image_path), "A1")
     wb.save(ruta)
 
 
 def exportar_csv(reporte, ruta):
-
-    with open(
-        ruta,
-        "w",
-        newline="",
-        encoding="utf-8"
-    ) as archivo:
-
+    with open(ruta, "w", newline="", encoding="utf-8") as archivo:
         writer = csv.writer(archivo)
-
-        writer.writerow([
-            "Criptomoneda",
-            "Precio USD",
-            "Fecha",
-            "Variación %"
-        ])
-
+        writer.writerow(["Criptomoneda", "Precio USD", "Fecha", "Variación %"])
         for item in reporte:
-
-            variacion = (
-                item["variacion"]
-                if item["variacion"] is not None
-                else "N/A"
-            )
-
-            writer.writerow([
-                item["nombre"],
-                item["precio"],
-                item["fecha"],
-                variacion
-            ])
+            writer.writerow([item["nombre"], item["precio"], item["fecha"], _variacion(item)])
 
 
 def exportar_html(reporte, ruta):
-
-    html = """
-<html>
-<head>
-<meta charset="UTF-8">
-<title>Reporte Cripto</title>
-</head>
-<body>
-
-<h1>Reporte de Criptomonedas</h1>
-
-<table border="1">
-<tr>
-<th>Criptomoneda</th>
-<th>Precio USD</th>
-<th>Fecha</th>
-<th>Variación %</th>
-</tr>
-"""
-
+    filas = []
     for item in reporte:
+        filas.append("<tr>" + "".join(
+            f"<td>{html.escape(str(value))}</td>"
+            for value in (item["nombre"], item["precio"], item["fecha"], _variacion(item))
+        ) + "</tr>")
+    contenido = """<!doctype html><html lang="es"><head><meta charset="UTF-8"><title>Reporte</title></head><body><h1>Reporte de Criptomonedas</h1><table><thead><tr><th>Criptomoneda</th><th>Precio USD</th><th>Fecha</th><th>Variación %</th></tr></thead><tbody>""" + "".join(filas) + "</tbody></table></body></html>"
+    with open(ruta, "w", encoding="utf-8") as archivo:
+        archivo.write(contenido)
 
-        variacion = (
-            item["variacion"]
-            if item["variacion"] is not None
-            else "N/A"
-        )
 
-        html += f"""
-<tr>
-<td>{item['nombre']}</td>
-<td>{item['precio']}</td>
-<td>{item['fecha']}</td>
-<td>{variacion}</td>
-</tr>
-"""
-
-    html += """
-</table>
-
-</body>
-</html>
-"""
-
-    with open(
-        ruta,
-        "w",
-        encoding="utf-8"
-    ) as archivo:
-
-        archivo.write(html)
-
-def exportar_pdf(reporte, ruta):
-    from reportlab.platypus import Image
-
+def exportar_pdf(reporte, ruta, grafico_actual=ARCHIVO_GRAFICO_ACTUAL, grafico_historico=ARCHIVO_GRAFICO_HISTORICO):
     pdf = SimpleDocTemplate(ruta)
     styles = getSampleStyleSheet()
-    contenido = []
-
-    contenido.append(Paragraph("Reporte de Criptomonedas", styles["Title"]))
-    contenido.append(Spacer(1, 20))
-
+    contenido = [Paragraph("Reporte de Criptomonedas", styles["Title"]), Spacer(1, 20)]
     for item in reporte:
         variacion = item.get("variacion")
         var_str = f"{'+' if variacion > 0 else ''}{variacion}%" if variacion is not None else "N/A"
-
-        contenido.append(Paragraph(f"<b>{item['nombre']}</b>", styles["Heading2"]))
-        contenido.append(Paragraph(f"Precio: USD {item['precio']}", styles["Normal"]))
-        contenido.append(Paragraph(f"Fecha: {item['fecha']}", styles["Normal"]))
-        contenido.append(Paragraph(f"Variación: {var_str}", styles["Normal"]))
-        contenido.append(Spacer(1, 12))
-
-    # Gráficos
-    for ruta_img, titulo in [
-        ("output/grafico_precios.png", "Precios actuales"),
-        ("output/grafico_historico.png", "Historial de precios")
-    ]:
-        if os.path.exists(ruta_img):
-            contenido.append(Paragraph(titulo, styles["Heading2"]))
-            contenido.append(Image(ruta_img, width=450, height=250))
-            contenido.append(Spacer(1, 20))
-
+        contenido.extend([
+            Paragraph(f"<b>{html.escape(str(item['nombre']))}</b>", styles["Heading2"]),
+            Paragraph(f"Precio: USD {html.escape(str(item['precio']))}", styles["Normal"]),
+            Paragraph(f"Fecha: {html.escape(str(item['fecha']))}", styles["Normal"]),
+            Paragraph(f"Variación: {html.escape(var_str)}", styles["Normal"]), Spacer(1, 10),
+        ])
+    for image_path, title in ((grafico_actual, "Precios actuales"), (grafico_historico, "Historial de precios")):
+        if Path(image_path).is_file():
+            contenido.extend([Paragraph(title, styles["Heading2"]), Image(image_path, width=450, height=250), Spacer(1, 15)])
     pdf.build(contenido)

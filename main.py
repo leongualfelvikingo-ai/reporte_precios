@@ -1,117 +1,57 @@
-import os
-
-from database import (
-    inicializar_db,
-    guardar_precios,
-    obtener_historial,
-    obtener_precio_anterior,
-)
-
+import uuid
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from config import (
-    CRIPTOS,
-    OUTPUT_DIR,
-    ARCHIVO_SALIDA,
-    ARCHIVO_CSV,
-    ARCHIVO_HTML,
-    ARCHIVO_PDF,
-    ARCHIVO_GRAFICO_ACTUAL,
-    ARCHIVO_GRAFICO_HISTORICO,
-)
-
-from api import (
-    obtener_precios,
-    construir_reporte,
-)
-
-from exportadores import (
-    exportar_excel,
-    exportar_csv,
-    exportar_html,
-    exportar_pdf,
-)
-
-from graficos import (
-    generar_grafico,
-    generar_grafico_historico,
-)
+from api import obtener_top_criptos, obtener_precios, construir_reporte
+from config import DEFAULT_TIMEZONE, REPORTS_DIR
+from database import crear_reporte, guardar_precios, obtener_historial, obtener_precio_anterior, registrar_archivo
+from exportadores import exportar_csv, exportar_excel, exportar_html, exportar_pdf
+from graficos import generar_grafico, generar_grafico_historico
 
 
-# Crear la carpeta de salida en la ubicación definida en config.py
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-
-# Inicializar base de datos
-inicializar_db()
-
-
-# Obtener datos
-data = obtener_precios(CRIPTOS)
-
-if not data:
-    raise SystemExit("No se pudieron obtener datos de la API.")
-
-
-# Fecha actual
-ahora = datetime.now(
-    ZoneInfo("America/Argentina/Buenos_Aires")
-).strftime("%Y-%m-%d %H:%M")
-
-
-# Construir reporte
-reporte = construir_reporte(
-    CRIPTOS,
-    data,
-    ahora,
-    obtener_precio_anterior,
-)
-
-
-# Guardar precios en base de datos
-guardar_precios(reporte)
-
-
-# Mostrar en consola
-print("\nREPORTE DE CRIPTOMONEDAS\n")
-
-for item in reporte:
-    variacion = item["variacion"]
-
-    if variacion is not None:
-        signo = "+" if variacion > 0 else ""
-        var_str = f" ({signo}{variacion}%)"
+def generar_reporte(timezone_name=DEFAULT_TIMEZONE, language="es", currency="usd", crypto_ids=None):
+    report_id = uuid.uuid4().hex
+    if crypto_ids is None:
+        ids, ranking_source = obtener_top_criptos(incluir_fuente=True)
     else:
-        var_str = " (sin historial)"
+        ids, ranking_source = list(crypto_ids), "manual"
 
-    print(
-        f"{item['nombre']}: "
-        f"USD {item['precio']}"
-        f"{var_str} "
-        f"({item['fecha']})"
-    )
+    precios = obtener_precios(ids)
+    ahora = datetime.now(ZoneInfo(timezone_name)).strftime("%Y-%m-%d %H:%M")
+    owner_token = crear_reporte(report_id, ids, timezone_name, language, currency, ranking_source)
+    reporte = construir_reporte(ids, precios, ahora, obtener_precio_anterior)
+    guardar_precios(reporte, report_id)
+    historial = obtener_historial(report_id)
 
-# Generar gráfico de precios actuales
-generar_grafico(reporte, ARCHIVO_GRAFICO_ACTUAL)
+    report_dir = REPORTS_DIR / report_id
+    report_dir.mkdir(parents=True, exist_ok=True)
+    actual = report_dir / "grafico_precios.png"
+    historico = report_dir / "grafico_historico.png"
+    generar_grafico(reporte, str(actual))
+    generar_grafico_historico(historial, str(historico))
 
-# Obtener historial actualizado
-historial = obtener_historial()
+    paths = {
+        "excel": report_dir / "reporte.xlsx", "csv": report_dir / "reporte.csv",
+        "html": report_dir / "reporte.html", "pdf": report_dir / "reporte.pdf",
+    }
+    exportar_excel(reporte, str(paths["excel"]), str(actual), str(historico))
+    exportar_csv(reporte, str(paths["csv"]))
+    exportar_html(reporte, str(paths["html"]))
+    exportar_pdf(reporte, str(paths["pdf"]), str(actual), str(historico))
 
-# Generar gráfico histórico
-generar_grafico_historico(historial, ARCHIVO_GRAFICO_HISTORICO)
+    # Se almacena un hash inicial no divulgado; el token utilizable se rota al confirmar el pago demo.
+    for formato, ruta in paths.items():
+        registrar_archivo(report_id, formato, ruta)
 
-# Exportar informes después de generar los gráficos
-exportar_excel(reporte, ARCHIVO_SALIDA)
-exportar_csv(reporte, ARCHIVO_CSV)
-exportar_html(reporte, ARCHIVO_HTML)
-exportar_pdf(reporte, ARCHIVO_PDF)
+    return {
+        "id": report_id, "owner_token": owner_token, "reporte": reporte,
+        "fecha": ahora, "historial": historial, "paths": paths,
+        "ranking_source": ranking_source,
+    }
 
-# Resumen final
-print("\nArchivos generados correctamente:\n")
-print(f"- Excel: {ARCHIVO_SALIDA}")
-print(f"- CSV: {ARCHIVO_CSV}")
-print(f"- HTML: {ARCHIVO_HTML}")
-print(f"- PDF: {ARCHIVO_PDF}")
-print(f"- Gráfico actual: {ARCHIVO_GRAFICO_ACTUAL}")
-print(f"- Gráfico histórico: {ARCHIVO_GRAFICO_HISTORICO}")
+
+if __name__ == "__main__":
+    result = generar_reporte()
+    print(f"Informe generado: {result['id']}")
+    for item in result["reporte"]:
+        print(f"{item['ranking']}. {item['nombre']}: USD {item['precio']}")
