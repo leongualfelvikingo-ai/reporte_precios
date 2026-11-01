@@ -1,54 +1,75 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Reporte Cripto</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Reporte de criptomonedas · v4</title>
     <style>
-        body { font-family: Arial, sans-serif; padding: 40px; background: #f5f5f5; }
-        h1 { color: #333; }
-        h2 { color: #555; margin-top: 40px; }
+        body { font-family: Arial, sans-serif; max-width: 1100px; margin: 2rem auto; padding: 0 1rem; background: #f4f6fa; color: #202938; }
+        main { background: #fff; padding: 2rem; border-radius: 12px; }
+        h1, h2 { color: #263b5b; }
+        .panel { padding: 1rem; background: #f7f9fc; border: 1px solid #dce3ed; border-radius: 8px; margin: 1rem 0; }
+        button, .btn { display: inline-block; background: #315f9c; color: white; border: 0; border-radius: 6px; padding: .75rem 1rem; text-decoration: none; cursor: pointer; }
+        button:hover, .btn:hover { background: #244a7c; }
+        label { margin-right: 1rem; line-height: 2; }
         table { border-collapse: collapse; width: 100%; background: white; }
-        th { background-color: #4F81BD; color: white; padding: 10px; }
-        td { padding: 10px; border: 1px solid #ddd; }
-        tr:nth-child(even) { background-color: #f2f2f2; }
-        .graficos { display: flex; gap: 20px; margin-top: 20px; flex-wrap: wrap; }
-        .graficos img { width: 48%; border: 1px solid #ddd; background: white; }
-        .descargas { margin-top: 30px; display: flex; gap: 10px; }
-        .btn { padding: 10px 20px; background: #4F81BD; color: white;
-               text-decoration: none; border-radius: 4px; }
-        .btn:hover { background: #3a6a9e; }
+        th { background: #315f9c; color: white; }
+        th, td { padding: .7rem; border: 1px solid #dce3ed; text-align: left; }
+        tr:nth-child(even) { background: #f5f7fa; }
+        .downloads, .charts { display: flex; gap: .8rem; flex-wrap: wrap; margin: 1rem 0; }
+        .charts img { max-width: 100%; width: 48%; min-width: 280px; object-fit: contain; }
+        .error { color: #a12622; background: #fff1f0; padding: .8rem; border-radius: 6px; }
+        .muted { color: #586579; }
     </style>
 </head>
 <body>
-    <h1>Reporte de Criptomonedas</h1>
-    <p>Actualizado: {{ fecha }}</p>
+<main>
+    <h1>Reporte Automático de Criptomonedas — v4</h1>
+    <p class="muted">Consulta precios en USD, registra el historial y genera los formatos que selecciones. La variación compara el precio actual con el último registro guardado; no representa necesariamente un cambio de 24 horas. Información informativa; no constituye asesoramiento financiero.</p>
 
-    <table>
-        <tr>
-            <th>Criptomoneda</th>
-            <th>Precio USD</th>
-            <th>Variación %</th>
-        </tr>
-        {% for item in reporte %}
-        <tr>
-            <td>{{ item.nombre }}</td>
-            <td>{{ item.precio }}</td>
-            <td>{{ item.variacion if item.variacion is not none else "N/A" }}</td>
-        </tr>
-        {% endfor %}
-    </table>
+    <section class="panel">
+        <h2>Generar un informe</h2>
+        <form method="post" action="/generar">
+            <p>Elegí al menos un formato:</p>
+            <label><input type="checkbox" name="formatos" value="pdf" checked> PDF</label>
+            <label><input type="checkbox" name="formatos" value="excel" checked> Excel</label>
+            <label><input type="checkbox" name="formatos" value="csv"> CSV</label>
+            <label><input type="checkbox" name="formatos" value="html"> HTML</label>
+            <p><button type="submit">Generar informe</button></p>
+        </form>
+    </section>
 
-    <h2>Gráficos</h2>
-    <div class="graficos">
-        <img src="/grafico/actual" alt="Precios actuales">
-        <img src="/grafico/historico" alt="Historial de precios">
-    </div>
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
 
-    <h2>Descargar reporte</h2>
-    <div class="descargas">
-        <a href="/descargar/excel" class="btn">Excel</a>
-        <a href="/descargar/csv" class="btn">CSV</a>
-        <a href="/descargar/pdf" class="btn">PDF</a>
-    </div>
+    {% if generado %}
+        <h2>Resultado</h2>
+        <p>Fecha de consulta: {{ fecha }}</p>
+        <table>
+            <thead><tr><th>Criptomoneda</th><th>Precio USD</th><th>Variación frente al último registro</th></tr></thead>
+            <tbody>
+            {% for item in reporte %}
+                <tr>
+                    <td>{{ item.nombre }}</td>
+                    <td>{{ item.precio }}</td>
+                    <td>{{ (item.variacion|string) + '%' if item.variacion is not none else 'N/A' }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+        <h2>Descargas seleccionadas</h2>
+        <div class="downloads">
+            {% for formato in formatos %}
+                <a class="btn" href="/descargar/{{ formato }}">{{ formato|upper }}</a>
+            {% endfor %}
+        </div>
+
+        <h2>Gráficos</h2>
+        <div class="charts">
+            <img src="/grafico/actual" alt="Gráfico de precios actuales">
+            <img src="/grafico/historico" alt="Gráfico de historial">
+        </div>
+    {% endif %}
+</main>
 </body>
 </html>
