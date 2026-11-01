@@ -1,117 +1,75 @@
 import os
-
-from database import (
-    inicializar_db,
-    guardar_precios,
-    obtener_historial,
-    obtener_precio_anterior,
-)
-
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from api import obtener_precios, construir_reporte
 from config import (
-    CRIPTOS,
-    OUTPUT_DIR,
-    ARCHIVO_SALIDA,
-    ARCHIVO_CSV,
-    ARCHIVO_HTML,
-    ARCHIVO_PDF,
-    ARCHIVO_GRAFICO_ACTUAL,
-    ARCHIVO_GRAFICO_HISTORICO,
+    CRIPTOS, OUTPUT_DIR, ARCHIVO_SALIDA, ARCHIVO_CSV, ARCHIVO_HTML,
+    ARCHIVO_PDF, ARCHIVO_GRAFICO_ACTUAL, ARCHIVO_GRAFICO_HISTORICO,
 )
-
-from api import (
-    obtener_precios,
-    construir_reporte,
-)
-
-from exportadores import (
-    exportar_excel,
-    exportar_csv,
-    exportar_html,
-    exportar_pdf,
-)
-
-from graficos import (
-    generar_grafico,
-    generar_grafico_historico,
-)
-
-
-# Crear la carpeta de salida en la ubicación definida en config.py
-os.makedirs(OUTPUT_DIR, exist_ok=True)
-
-
-# Inicializar base de datos
-inicializar_db()
-
-
-# Obtener datos
-data = obtener_precios(CRIPTOS)
-
-if not data:
-    raise SystemExit("No se pudieron obtener datos de la API.")
-
-
-# Fecha actual
-ahora = datetime.now(
-    ZoneInfo("America/Argentina/Buenos_Aires")
-).strftime("%Y-%m-%d %H:%M")
-
-
-# Construir reporte
-reporte = construir_reporte(
-    CRIPTOS,
-    data,
-    ahora,
+from database import (
+    inicializar_db, guardar_precios, obtener_historial,
     obtener_precio_anterior,
 )
+from exportadores import exportar_excel, exportar_csv, exportar_html, exportar_pdf
+from graficos import generar_grafico, generar_grafico_historico
+
+EXPORTADORES = {
+    "excel": (ARCHIVO_SALIDA, exportar_excel),
+    "csv": (ARCHIVO_CSV, exportar_csv),
+    "html": (ARCHIVO_HTML, exportar_html),
+    "pdf": (ARCHIVO_PDF, exportar_pdf),
+}
 
 
-# Guardar precios en base de datos
-guardar_precios(reporte)
+def generar_reporte(formatos=None):
+    """Genera el informe v4 y exporta solo los formatos seleccionados."""
+    seleccionados = list(dict.fromkeys(EXPORTADORES.keys() if formatos is None else formatos))
+    invalidos = set(seleccionados) - set(EXPORTADORES)
+    if invalidos:
+        raise ValueError("Formato no válido: " + ", ".join(sorted(invalidos)))
+    if not seleccionados:
+        raise ValueError("Seleccioná al menos un formato de descarga.")
+
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+    inicializar_db()
+
+    precios = obtener_precios(CRIPTOS)
+    if not precios:
+        raise RuntimeError("No se pudieron obtener precios de CoinGecko.")
+
+    fecha = datetime.now(
+        ZoneInfo("America/Argentina/Buenos_Aires")
+    ).strftime("%Y-%m-%d %H:%M")
+    reporte = construir_reporte(CRIPTOS, precios, fecha, obtener_precio_anterior)
+    guardar_precios(reporte)
+
+    generar_grafico(reporte, ARCHIVO_GRAFICO_ACTUAL)
+    historial = obtener_historial()
+    generar_grafico_historico(historial, ARCHIVO_GRAFICO_HISTORICO)
+
+    for formato in seleccionados:
+        ruta, exportador = EXPORTADORES[formato]
+        if formato in ("excel", "pdf"):
+            exportador(reporte, ruta, ARCHIVO_GRAFICO_ACTUAL, ARCHIVO_GRAFICO_HISTORICO)
+        else:
+            exportador(reporte, ruta)
+
+    return {
+        "reporte": reporte,
+        "fecha": fecha,
+        "historial": historial,
+        "formatos": seleccionados,
+    }
 
 
-# Mostrar en consola
-print("\nREPORTE DE CRIPTOMONEDAS\n")
-
-for item in reporte:
-    variacion = item["variacion"]
-
-    if variacion is not None:
-        signo = "+" if variacion > 0 else ""
-        var_str = f" ({signo}{variacion}%)"
-    else:
-        var_str = " (sin historial)"
-
-    print(
-        f"{item['nombre']}: "
-        f"USD {item['precio']}"
-        f"{var_str} "
-        f"({item['fecha']})"
-    )
-
-# Generar gráfico de precios actuales
-generar_grafico(reporte, ARCHIVO_GRAFICO_ACTUAL)
-
-# Obtener historial actualizado
-historial = obtener_historial()
-
-# Generar gráfico histórico
-generar_grafico_historico(historial, ARCHIVO_GRAFICO_HISTORICO)
-
-# Exportar informes después de generar los gráficos
-exportar_excel(reporte, ARCHIVO_SALIDA)
-exportar_csv(reporte, ARCHIVO_CSV)
-exportar_html(reporte, ARCHIVO_HTML)
-exportar_pdf(reporte, ARCHIVO_PDF)
-
-# Resumen final
-print("\nArchivos generados correctamente:\n")
-print(f"- Excel: {ARCHIVO_SALIDA}")
-print(f"- CSV: {ARCHIVO_CSV}")
-print(f"- HTML: {ARCHIVO_HTML}")
-print(f"- PDF: {ARCHIVO_PDF}")
-print(f"- Gráfico actual: {ARCHIVO_GRAFICO_ACTUAL}")
-print(f"- Gráfico histórico: {ARCHIVO_GRAFICO_HISTORICO}")
+if __name__ == "__main__":
+    resultado = generar_reporte()
+    print("\nREPORTE DE CRIPTOMONEDAS\n")
+    for item in resultado["reporte"]:
+        variacion = item["variacion"]
+        variacion_texto = f" ({variacion:+.2f}%)" if variacion is not None else " (sin historial)"
+        print(f"{item['nombre']}: USD {item['precio']}{variacion_texto} ({item['fecha']})")
+    print("\nArchivos generados:")
+    for formato in resultado["formatos"]:
+        print(f"- {formato.upper()}: {EXPORTADORES[formato][0]}")
