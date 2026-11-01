@@ -30,6 +30,8 @@ def index():
 @app.post("/generar")
 def generar():
     global formatos_disponibles
+    # Un informe fallido no debe dejar habilitadas descargas de una ejecución anterior.
+    formatos_disponibles = set()
     formatos = request.form.getlist("formatos")
     try:
         resultado = generar_reporte(formatos)
@@ -41,7 +43,7 @@ def generar():
             formatos=resultado["formatos"],
             generado=True,
         )
-    except (ValueError, RuntimeError) as error:
+    except ValueError as error:
         return render_template("index.html", error=str(error)), 400
     except Exception:
         logger.exception("Error al generar el reporte v4")
