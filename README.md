@@ -1,22 +1,29 @@
 # Reporte Automático de Criptomonedas — v4
 
-La v4 es una aplicación web sencilla para consultar las tres criptomonedas configuradas, revisar su precio en USD y su variación frente al último dato guardado, y descargar un informe en los formatos seleccionados.
+La v4 es una aplicación web local para consultar los precios en USD de las tres criptomonedas fijas configuradas, registrar el historial y generar informes descargables.
 
-## Funciones incluidas
+## Funciones
 
-- Interfaz web local con botón explícito para generar el informe.
-- Selección de PDF, Excel, CSV y HTML antes de generar.
+- Interfaz web local: la página inicial no consulta la API ni genera archivos automáticamente.
+- Botón explícito para generar un informe.
+- Selección de uno o varios formatos: PDF, Excel, CSV y HTML.
+- Solo se generan los formatos seleccionados.
 - Registro del historial en SQLite.
 - Gráfico de precios actuales y gráfico histórico.
-- Inclusión de gráficos en las exportaciones PDF y Excel.
-- Mensajes controlados cuando la API no responde o faltan precios.
+- Inclusión de los gráficos en las exportaciones PDF y Excel.
+- Mensajes controlados ante errores de conexión o generación.
+- Endpoint de comprobación: `/health`.
 
-## Ejecutar
+## Variación de precio
+
+La variación se calcula frente al último precio guardado para cada activo en la base SQLite. No es una variación de 24 horas garantizada: el intervalo depende de cuándo se hayan guardado los informes anteriores.
+
+## Ejecutar localmente
 
 ```bash
 python -m venv .venv
 # Windows:
-.venv\Scripts\activate
+.venv\\Scripts\\activate
 # macOS / Linux:
 source .venv/bin/activate
 
@@ -26,26 +33,20 @@ python app.py
 
 Abrí http://127.0.0.1:5000/.
 
-También se puede ejecutar sin interfaz web:
+También se puede generar el informe desde la terminal con:
 
 ```bash
 python main.py
 ```
 
-## Alcance de esta versión
+## Límites de la v4
 
-La v4 mantiene la lista fija de tres activos configurados en `config.py`. No incluye ranking dinámico por capitalización, informes aislados por cliente, tokens individuales de descarga, autorización de pagos ni integración con Mercado Pago. Esas capacidades pertenecen a la evolución v5 y posteriores.
-
-La selección de formatos en v4 controla qué archivos se generan y quedan disponibles para descargar. No representa una compra ni un cobro.
+- Mantiene la lista fija de tres activos de `config.py`.
+- Usa almacenamiento local en `output/`; no es un servicio multiusuario desplegado.
+- No incluye ranking dinámico por capitalización, informes aislados por cliente, tokens individuales, cuentas, pagos ni integración con Mercado Pago.
+- La selección de formatos controla la generación y descarga; no representa una compra ni un cobro.
+- Los datos dependen de CoinGecko. El proyecto no ofrece asesoramiento financiero.
 
 ## Versión 5
 
-El código fuente de la versión avanzada se conserva por separado en [`versiones/v5/`](versiones/v5/README.md). No reemplaza los archivos de v4 ni se mezcla con su ejecución.
-
-## Limitaciones
-
-- La aplicación usa almacenamiento local en la carpeta `output/`; no es un servicio multiusuario desplegado.
-- No hay cuentas, autenticación ni pagos.
-- La base de datos conserva el historial en el entorno donde se ejecuta.
-- Los datos dependen de la disponibilidad de CoinGecko.
-- El proyecto es informativo y no ofrece asesoramiento financiero.
+El código de la evolución avanzada se conserva por separado en [`versiones/v5/`](versiones/v5/README.md). No reemplaza ni se mezcla con la ejecución de v4.
