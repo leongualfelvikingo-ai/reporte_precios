@@ -25,7 +25,7 @@
 <body>
 <main>
     <h1>Reporte Automático de Criptomonedas — v4</h1>
-    <p class="muted">Consulta precios en USD, registra el historial y genera los formatos que selecciones. Información informativa; no constituye asesoramiento financiero.</p>
+    <p class="muted">Consulta precios en USD, registra el historial y genera los formatos que selecciones. La variación compara el precio actual con el último registro guardado; no representa necesariamente un cambio de 24 horas. Información informativa; no constituye asesoramiento financiero.</p>
 
     <section class="panel">
         <h2>Generar un informe</h2>
@@ -45,7 +45,7 @@
         <h2>Resultado</h2>
         <p>Fecha de consulta: {{ fecha }}</p>
         <table>
-            <thead><tr><th>Criptomoneda</th><th>Precio USD</th><th>Variación</th></tr></thead>
+            <thead><tr><th>Criptomoneda</th><th>Precio USD</th><th>Variación frente al último registro</th></tr></thead>
             <tbody>
             {% for item in reporte %}
                 <tr>
