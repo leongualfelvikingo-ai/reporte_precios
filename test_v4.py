@@ -22,7 +22,17 @@ class GeneracionV4Tests(unittest.TestCase):
         self, _reporte, _precios, _db, _guardar, _historial, _grafico,
         _grafico_historico, _pdf, _html, _excel, exportar_csv
     ):
-        resultado = main.generar_reporte(["csv"])
+        # EXPORTADORES guarda referencias creadas al importar main; sustituir
+        # solo main.exportar_csv no cambia automáticamente esas referencias.
+        exportadores_mock = {
+            "excel": (main.ARCHIVO_SALIDA, _excel),
+            "csv": (main.ARCHIVO_CSV, exportar_csv),
+            "html": (main.ARCHIVO_HTML, _html),
+            "pdf": (main.ARCHIVO_PDF, _pdf),
+        }
+        with patch.dict(main.EXPORTADORES, exportadores_mock):
+            resultado = main.generar_reporte(["csv"])
+
         self.assertEqual(resultado["formatos"], ["csv"])
         exportar_csv.assert_called_once()
         _pdf.assert_not_called()
